@@ -48,6 +48,10 @@
         <div class="col-sm-2" id="fractalScale"></div>
     </div>
     <!-- TODO: Add rotation slider -->
+    <div class="row" style="margin-top: 15px;">
+        <div style="text-align: right;" class="col-md-1">Rotate:</div>
+        <div class="col-sm-2" id="fractalRotate"></div>
+    </div>
 
 </div>
 
@@ -78,50 +82,56 @@
 
     uniform vec2 center;
     uniform float fractal_scale;
+    uniform float fractal_rotate;
     // TODO: Add variables and helper functions for rotation!
 
     vec3 fractal(vec2 p) {
         // TODO: Change the offset calculation to incorporate rotation!
+
+        //p = R * (p-0.5) + 0.5
+
+        float rad = radians(fractal_rotate);
         vec2 offset = (p - center) / fractal_scale;
-        float real = offset.x;
-        float imag = offset.y;
+
+        float real = offset.x * cos(rad)+ offset.y * sin(rad);
+        float imag = - offset.x * sin(rad)+offset.y * cos(rad);
         vec2 c = vec2(-0.4, 0.6);
 
         int j = 0;
         for (int i = 0; i < 100; i++) {
- 		    float temp = (real * real) - (imag * imag) + c.x;
- 		    imag = 2.0 * real * imag + c.y;
- 		    real = temp;
- 		    j = i+1;
+            float temp = (real * real) - (imag * imag) + c.x;
+            imag = 2.0 * real * imag + c.y;
+            real = temp;
+            j = i+1;
 
- 		    vec2 x = vec2(real, imag);
- 		    if (dot(x, x) > 4.0) {
- 			    break;
- 		    }
+            vec2 x = vec2(real, imag);
+            if (dot(x, x) > 4.0) {
+                break;
+            }
         }
         vec3 value = vec3(0.0, 0.0, 0.0);
         if (j==100) {
-        	value = vec3(0.08, 0.10, 0.20);
+            value = vec3(0.08, 0.10, 0.20);
         }
         return value;
     }
 
     float sRGBSingle(float c) {
-	    float a = 0.055;
-	    if (c <= 0.0)
-		    return 0.0;
-	    else if (c < 0.0031308) {
-		    return 12.92*c;
-	    } else {
-		    if (c >= 1.0)
-			    return 1.0;
-		    else
-			    return (1.0+a)*pow(c, 1.0/2.4)-a;
-	    }
+        float a = 0.055;
+        if (c <= 0.0)
+            return 0.0;
+        else if (c < 0.0031308) {
+            return 12.92*c;
+        } else {
+            if (c >= 1.0)
+                return 1.0;
+            else
+                return (1.0+a)*pow(c, 1.0/2.4)-a;
+        }
     }
 
     vec4 sRGB(vec4 c) {
-	    return vec4(sRGBSingle(c.r), sRGBSingle(c.g), sRGBSingle(c.b), c.a);
+        return vec4(sRGBSingle(c.r), sRGBSingle(c.g), sRGBSingle(c.b), c.a);
     }
 
     void main() {
@@ -244,7 +254,6 @@
         window.requestAnimationFrame(updateWebGL);
     }
 
-    // TODO do for angle what is being done for center and scale...
     ["fractalCenterX", "fractalCenterY"].forEach(function (name) {
         $("#" + name).slider({
             min: 0,
@@ -257,14 +266,22 @@
         max: 1000,
         value: 100
     });
+    $("#fractalRotate").slider({
+        min: 0,
+        max: 1000,
+        value: 0
+    });
     runCanvas("webglCanvas02", "vertexShader", "fragmentShader02", function(gl, program) {
         var centerX = $("#fractalCenterX").slider("value") / 1000.0;
         var centerY = $("#fractalCenterY").slider("value") / 1000.0;
         var scale = $("#fractalScale").slider("value") / 1000.0;
+        var rotate = $("#fractalRotate").slider("value")/1000.0 * 360;
         scale = 0.1 + (9.99)*scale;
 
         gl.uniform2f(gl.getUniformLocation(program, "center"), centerX, centerY);
         gl.uniform1f(gl.getUniformLocation(program, "fractal_scale"), scale);
+        gl.uniform1f(gl.getUniformLocation(program, "fractal_rotate"), rotate);
+
     });
 </script>
 
